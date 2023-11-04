@@ -1,0 +1,6 @@
+commands:
+  waifu:
+    description: 娶群友
+    messages:
+        marriages: '{quote}你今日的群友老婆是：{name} {avatar}'
+        members-too-few: 潜在的老婆太少啦，快去拐骗（？）点回来吧！

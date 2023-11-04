@@ -1,0 +1,38 @@
+{
+  "name": "koishi-plugin-waifu",
+  "description": "Marry with your groupmate",
+  "version": "0.0.2",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "chatbot",
+    "koishi",
+    "plugin",
+    "waifu",
+    "marry"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/idanran/koishi-plugin-waifu.git"
+  },
+  "author": {
+    "email": "idanran@outlook.com",
+    "name": "idanran",
+    "url": "https://github.com/idanran"
+  },
+  "peerDependencies": {
+    "koishi": "^4.15.2"
+  },
+  "koishi": {
+    "description": {
+      "en": "Marry with your groupmate",
+      "zh": "娶群友！来寻找你今日的群友老婆吧！"
+    },
+    "browser": true
+  }
+}
