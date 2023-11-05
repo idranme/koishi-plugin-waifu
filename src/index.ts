@@ -18,7 +18,7 @@ export function apply(ctx: Context) {
     if (guildMembers) {
       guildMembers.set(session.fid, session.event.member)
     } else {
-      members.set(session.gid, new Map().set(session.fid, session.event.member))
+      members.set(session.gid, new Map([[session.fid, session.event.member]]))
     }
   })
 
