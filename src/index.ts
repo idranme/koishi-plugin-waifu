@@ -60,15 +60,19 @@ export function apply(ctx: Context) {
         session.userId,
         session.selfId
       ]
-      const list = data.filter(v => !excludes.includes(v.user.id))
+      const list = data.filter(v => !excludes.includes(v.user.id) && !v.user.isBot)
       if (list.length === 0) {
         return session.text('.members-too-few')
       }
 
-      const selected = randomSelect(list)
+      let selected = randomSelect(list)
+      let selectedFid = `${session.platform}:${session.guildId}:${selected.user.id}`
+      if (marriages.has(selectedFid)) {
+        selected = randomSelect(list)
+        selectedFid = `${session.platform}:${session.guildId}:${selected.user.id}`
+      }
       const marriageDate = Date.now()
       marriages.set(session.fid, { ...selected, marriageDate })
-      const selectedFid = `${session.platform}:${session.guildId}:${selected.user.id}`
       marriages.set(selectedFid, { ...session.event.member, marriageDate })
 
       return session.text('.marriages', {
