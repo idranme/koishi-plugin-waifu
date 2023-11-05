@@ -13,15 +13,13 @@ export function apply(ctx: Context) {
   const members: Map<string, Map<string, Universal.GuildMember>> = new Map()
   const marriages: Map<string, Universal.GuildMember & { marriageDate: number }> = new Map()
 
-  ctx.guild().middleware(async (session, next) => {
+  ctx.guild().on('message-created', (session) => {
     const guildMembers = members.get(session.gid)
     if (guildMembers) {
       guildMembers.set(session.fid, session.event.member)
     } else {
       members.set(session.gid, new Map().set(session.fid, session.event.member))
     }
-
-    return next()
   })
 
   ctx.on('guild-member-removed', (session) => {
