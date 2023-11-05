@@ -40,7 +40,11 @@ export function apply(ctx: Context) {
         })
       }
 
-      let { data } = await session.bot.getGuildMemberList(session.guildId)
+      let { data, next } = await session.bot.getGuildMemberList(session.guildId)
+      if (next) {
+        const memberList = await session.bot.getGuildMemberList(session.guildId, next)
+        data = [...data, ...memberList.data]
+      }
       const guildMembers = members.get(session.gid)
       if (data.length === 0 && guildMembers) {
         for (const [key, value] of guildMembers) {
