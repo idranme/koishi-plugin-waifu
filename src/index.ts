@@ -3,11 +3,15 @@ import { randomSelect, isSameDay } from './utils'
 
 export const name = 'waifu'
 
-export interface Config { }
+export interface Config {
+  avoidNtr: boolean
+}
 
-export const Config: Schema<Config> = Schema.object({})
+export const Config: Schema<Config> = Schema.object({
+  avoidNtr: Schema.boolean().default(false).description('避免用户抽中他人的老婆')
+})
 
-export function apply(ctx: Context) {
+export function apply(ctx: Context, cfg: Config) {
   ctx.i18n.define('zh-CN', require('./locales/zh-CN'))
 
   const members: Map<string, Map<string, Universal.GuildMember>> = new Map()
@@ -28,7 +32,7 @@ export function apply(ctx: Context) {
   })
 
   ctx.guild().command('waifu', '娶群友')
-    .alias('marry', '娶群友')
+    .alias('marry', '娶群友', '今日老婆')
     .action(async ({ session }) => {
       const marriage = marriages.get(session.fid)
       if (marriage && marriage.user.id !== session.userId && isSameDay(Date.now(), marriage.marriageDate)) {
@@ -72,6 +76,19 @@ export function apply(ctx: Context) {
       if (marriages.has(selectedFid)) {
         selected = randomSelect(list)
         selectedFid = `${session.platform}:${session.guildId}:${selected.user.id}`
+      }
+      if (cfg.avoidNtr) {
+        let i = 0
+        while (true) {
+          if (marriages.has(selectedFid)) {
+            selected = randomSelect(list)
+            selectedFid = `${session.platform}:${session.guildId}:${selected.user.id}`
+          } else {
+            break
+          }
+          i++
+          if (i > list.length) return session.text('.members-too-few')
+        }
       }
       const marriageDate = Date.now()
       marriages.set(session.fid, { ...selected, marriageDate })
