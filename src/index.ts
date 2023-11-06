@@ -31,7 +31,7 @@ export function apply(ctx: Context) {
     .alias('marry', '娶群友')
     .action(async ({ session }) => {
       const marriage = marriages.get(session.fid)
-      if (marriage && isSameDay(Date.now(), marriage.marriageDate)) {
+      if (marriage && marriage.user.id !== session.userId && isSameDay(Date.now(), marriage.marriageDate)) {
         const selected = marriage
         return session.text('.marriages', {
           quote: h('quote', { id: session.messageId }),
