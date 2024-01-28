@@ -5,10 +5,20 @@ export const name = 'waifu'
 
 export interface Config {
   avoidNtr: boolean
+  excludeUsers: {
+    uid: string
+    note?: string
+  }[]
 }
 
 export const Config: Schema<Config> = Schema.object({
-  avoidNtr: Schema.boolean().default(false).description('避免用户抽中他人的老婆')
+  avoidNtr: Schema.boolean().default(false),
+  excludeUsers: Schema.array(Schema.object({
+    uid: Schema.string().required(),
+    note: Schema.string()
+  })).default([{ uid: 'red:2854196310', note: 'Q群管家' }])
+}).i18n({
+  'zh-CN': require('./locales/zh-CN'),
 })
 
 export function apply(ctx: Context, cfg: Config) {
@@ -51,7 +61,7 @@ export function apply(ctx: Context, cfg: Config) {
       }
       const guildMembers = members.get(session.gid)
       if (data.length === 0 && guildMembers) {
-        for (const [key, value] of guildMembers) {
+        for (const [, value] of guildMembers) {
           data.push(value)
         }
       } else if (guildMembers) {
@@ -62,11 +72,10 @@ export function apply(ctx: Context, cfg: Config) {
         members.set(session.gid, map)
       }
 
-      const excludes = [
-        session.userId,
-        session.selfId
-      ]
-      const list = data.filter(v => !excludes.includes(v.user.id) && !v.user.isBot)
+      const excludes = cfg.excludeUsers.map(({ uid }) => uid)
+      excludes.push(session.uid, session.sid)
+
+      const list = data.filter(v => !excludes.includes(`${session.platform}:${v.user.id}`) && !v.user.isBot)
       if (list.length === 0) {
         return session.text('.members-too-few')
       }

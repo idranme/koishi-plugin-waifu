@@ -1,3 +1,10 @@
+avoidNtr: 是否避免用户抽中他人的老婆
+excludeUsers:
+  $description: 排除的用户
+  $value:
+    uid: 群组平台与用户 ID, 格式:`platform:userId`
+    note: 备注 (可不填此项)
+
 commands:
   waifu:
     description: 娶群友
