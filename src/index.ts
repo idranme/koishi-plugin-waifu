@@ -38,7 +38,8 @@ export function apply(ctx: Context, cfg: Config) {
   // sid: platform:selfId
 
   ctx.guild().on('message-created', async (session) => {
-    await ctx.cache.set(`waifu_members_${session.gid}`, session.userId, session.event.member, 2 * Time.day)
+    const member: Universal.GuildMember = session.event.member || { user: session.event.user }
+    await ctx.cache.set(`waifu_members_${session.gid}`, session.userId, member, 2 * Time.day)
   })
 
   ctx.on('guild-member-removed', (session) => {
