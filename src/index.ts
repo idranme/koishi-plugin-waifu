@@ -33,6 +33,10 @@ export const Config: Schema<Config> = Schema.object({
 export function apply(ctx: Context, cfg: Config) {
   ctx.i18n.define('zh-CN', require('./locales/zh-CN'))
 
+  // gid: platform:guildId
+  // fid: platform:guildId:userId
+  // sid: platform:selfId
+
   ctx.guild().on('message-created', async (session) => {
     await ctx.cache.set(`waifu_members_${session.gid}`, session.userId, session.event.member, 2 * Time.day)
   })
@@ -49,7 +53,7 @@ export function apply(ctx: Context, cfg: Config) {
       }
 
       const marriage = await ctx.cache.get('waifu_marriages', session.fid)
-      if (marriage && marriage.user.id !== session.userId && isSameDay(Date.now(), marriage.marriageDate)) {
+      if (marriage && isSameDay(Date.now(), marriage.marriageDate)) {
         const selected = marriage
         return session.text('.marriages', {
           quote: h.quote(session.messageId),
@@ -58,21 +62,25 @@ export function apply(ctx: Context, cfg: Config) {
         })
       }
 
-      let { data, next } = await session.bot.getGuildMemberList(session.guildId)
-      if (next) {
-        const memberList = await session.bot.getGuildMemberList(session.guildId, next)
-        data = [...data, ...memberList.data]
-      }
-      if (data.length === 0) {
+      let memberList: Universal.GuildMember[]
+      try {
+        const { data, next } = await session.bot.getGuildMemberList(session.guildId)
+        memberList = data
+        if (next) {
+          const { data } = await session.bot.getGuildMemberList(session.guildId, next)
+          memberList.push(...data)
+        }
+      } catch { }
+      if (!memberList?.length) {
         for await (const [, value] of ctx.cache.entries(`waifu_members_${session.gid}`)) {
-          data.push(value)
+          memberList.push(value)
         }
       }
 
       const excludes = cfg.excludeUsers.map(({ uid }) => uid)
       excludes.push(session.uid, session.sid)
 
-      const list = data.filter(v => !excludes.includes(`${session.platform}:${v.user.id}`) && !v.user.isBot)
+      const list = memberList.filter(v => !excludes.includes(`${session.platform}:${v.user.id}`) && !v.user.isBot)
       if (list.length === 0) {
         return session.text('.members-too-few')
       }
