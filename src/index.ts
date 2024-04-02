@@ -9,11 +9,15 @@ declare module '@koishijs/cache' {
   interface Tables {
     waifu_marriages: Universal.GuildMember & { marriageDate: number }
     [key: `waifu_members_${string}`]: Universal.GuildMember
+    [key: `waifu_members_active_${string}`]: Universal.GuildMember
   }
 }
 
 export interface Config {
   avoidNtr: boolean
+  onlyActiveUser: boolean
+  activeDays: number
+  forceMarry: boolean
   excludeUsers: {
     uid: string
     note?: string
@@ -22,6 +26,9 @@ export interface Config {
 
 export const Config: Schema<Config> = Schema.object({
   avoidNtr: Schema.boolean().default(false),
+  onlyActiveUser: Schema.boolean().default(false),
+  activeDays: Schema.number().default(7),
+  forceMarry: Schema.boolean().default(false),
   excludeUsers: Schema.array(Schema.object({
     uid: Schema.string().required(),
     note: Schema.string()
@@ -40,10 +47,12 @@ export function apply(ctx: Context, cfg: Config) {
   ctx.guild().on('message-created', async (session) => {
     const member: Universal.GuildMember = session.event.member || { user: session.event.user }
     await ctx.cache.set(`waifu_members_${session.gid}`, session.userId, member, 2 * Time.day)
+    await ctx.cache.set(`waifu_members_active_${session.gid}`, session.userId, member, cfg.activeDays * Time.day)
   })
 
   ctx.on('guild-member-removed', (session) => {
     ctx.cache.delete(`waifu_members_${session.gid}`, session.userId)
+    ctx.cache.delete(`waifu_members_active_${session.gid}`, session.userId)
   })
 
   ctx.command('waifu', '娶群友')
@@ -81,10 +90,20 @@ export function apply(ctx: Context, cfg: Config) {
       const excludes = cfg.excludeUsers.map(({ uid }) => uid)
       excludes.push(session.uid, session.sid)
 
-      const list = memberList.filter(v => !excludes.includes(`${session.platform}:${v.user.id}`) && !v.user.isBot)
+      let list = memberList.filter(v => !excludes.includes(`${session.platform}:${v.user.id}`) && !v.user.isBot)
       if (list.length === 0) {
         return session.text('.members-too-few')
       }
+
+      if (cfg.onlyActiveUser) {
+        let activeList = []
+        for await (const [, value] of ctx.cache.entries(`waifu_members_active_${session.gid}`)) {
+          activeList.push(value)
+        }
+        list = list.filter(v => activeList.find(active => active.user.id === v.user.id))
+      }
+
+      if (list.length === 0) return session.text('.members-too-few')
 
       let selected = randomSelect(list)
       let selectedFid = `${session.platform}:${session.guildId}:${selected.user.id}`
@@ -117,4 +136,57 @@ export function apply(ctx: Context, cfg: Config) {
         avatar: h.image(selected.avatar || selected.user.avatar)
       })
     })
+
+  ctx.command('divorce', '闹离婚')
+  .alias('分手', '闹离婚', '离婚')
+  .action(async ({ session }) => {
+    const marriage = await ctx.cache.get('waifu_marriages', session.fid)
+    if (marriage && isSameDay(Date.now(), marriage.marriageDate)) {
+      await ctx.cache.delete('waifu_marriages', session.fid)
+      let selectedFid = `${session.platform}:${session.guildId}:${marriage.user?.id}`
+      await ctx.cache.delete('waifu_marriages', selectedFid)
+      return session.text('.divorce', {
+        quote: h.quote(session.messageId)
+      })
+    }
+  })
+
+  if (cfg.forceMarry) {
+    ctx.command('force_marry', '强娶')
+    .alias('force_marry', '强娶')
+    .action(async ({ session }) => {
+      const message = session.event?.message
+      const target = message?.content.match(/id="(\d+?)"/)
+      if (target == null) {
+        return session.text('.no_target', {
+          quote: h.quote(session.messageId)
+        })
+      }
+
+      let memberList: Universal.GuildMember[]
+      try {
+        const { data, next } = await session.bot.getGuildMemberList(session.guildId)
+        memberList = data
+        if (next) {
+          const { data } = await session.bot.getGuildMemberList(session.guildId, next)
+          memberList.push(...data)
+        }
+      } catch { }
+      if (!memberList?.length) {
+        for await (const [, value] of ctx.cache.entries(`waifu_members_${session.gid}`)) {
+          memberList.push(value)
+        }
+      }
+      
+      const targetId = target[1]
+      const marriageDate = Date.now()
+      let selected = memberList.find(u => u.user.id == targetId)
+      await ctx.cache.set('waifu_marriages', session.fid, { ...selected, marriageDate }, Time.day)
+      return session.text('.force_marry', {
+        quote: h.quote(session.messageId),
+        name: selected.nick || selected.user.nick || selected.user.name,
+        avatar: h.image(selected.avatar || selected.user.avatar)
+      })
+    })
+  }
 }
