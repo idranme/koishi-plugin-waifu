@@ -1,4 +1,7 @@
 avoidNtr: 是否避免用户抽中他人的老婆
+onlyActiveUser: 是否只娶活跃天数内发言过的群友
+activeDays: 活跃天数
+forceMarry: 启用强娶
 excludeUsers:
   $description: 排除的用户
   $value:
@@ -10,4 +13,13 @@ commands:
     description: 娶群友
     messages:
         marriages: '{quote}你今日的群友老婆是：{name} {avatar}'
-        members-too-few: 潜在的老婆太少啦，快去拐骗（？）点回来吧！
+        members-too-few: 潜在的老婆太少啦，快去拐骗（？）点回来吧！或者骗出来聊天！
+  divorce:
+    description: 闹离婚
+    messages:
+        divorce: '{quote}别闹啦，好啦，你已经单身啦！'
+  force_marry:
+    description: 强娶群友
+    messages:
+        force_marry: '{quote}好啦好啦，群友{name}已经被你强娶回家了 {avatar}'
+        no_target: '{quote}强娶谁呀~'
