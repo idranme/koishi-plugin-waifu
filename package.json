@@ -27,7 +27,7 @@
     "url": "https://github.com/idanran"
   },
   "peerDependencies": {
-    "koishi": "^4.15.2"
+    "koishi": "^4.16.0"
   },
   "devDependencies": {
     "@koishijs/cache": "^2.1.0"
