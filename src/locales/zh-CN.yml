@@ -2,24 +2,31 @@ avoidNtr: 是否避免用户抽中他人的老婆
 onlyActiveUser: 是否只娶活跃天数内发言过的群友
 activeDays: 活跃天数
 forceMarry: 启用强娶
+allowDivorce: 允许离婚
 excludeUsers:
   $description: 排除的用户
   $value:
     uid: 群组平台与用户 ID, 格式:`platform:userId`
     note: 备注 (可不填此项)
+force-marry: '{quote}好啦好啦，群友{name}已经被你强娶回家了 {avatar}'
+no-self: '{quote}娶自己是干嘛啦！'
+already-marriage: '{quote}你已经娶了 {name} 当老婆啦，别再娶啦'
 
 commands:
   waifu:
     description: 娶群友
     messages:
         marriages: '{quote}你今日的群友老婆是：{name} {avatar}'
-        members-too-few: 潜在的老婆太少啦，快去拐骗（？）点回来吧！或者骗出来聊天！
+        members-too-few: '{quote}潜在的老婆太少啦，快去拐骗（？）点回来吧！或者骗出来聊天！'
+        already-marriage: '{quote}你已经娶了 {name} 当老婆啦，别再娶啦 {avatar}'
   divorce:
     description: 闹离婚
     messages:
         divorce: '{quote}别闹啦，好啦，你已经单身啦！'
+        no-divorce: '{quote}不可以离婚哦，要好好在一起呢！'
+        no-marriage: '{quote}你都没老婆！！'
   force_marry:
     description: 强娶群友
     messages:
-        force_marry: '{quote}好啦好啦，群友{name}已经被你强娶回家了 {avatar}'
-        no_target: '{quote}强娶谁呀~'
+        force-marry: '{quote}好啦好啦，群友{name}已经被你强娶回家了 {avatar}'
+        no-target: '{quote}强娶谁呀~'
