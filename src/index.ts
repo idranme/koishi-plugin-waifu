@@ -90,7 +90,7 @@ export function apply(ctx: Context, cfg: Config) {
       const excludes = cfg.excludeUsers.map(({ uid }) => uid)
       excludes.push(session.uid, session.sid)
 
-      let list = memberList.filter(v => !excludes.includes(`${session.platform}:${v.user.id}`) && !v.user.isBot)
+      let list = memberList.filter(v => v.user && !excludes.includes(`${session.platform}:${v.user.id}`) && !v.user.isBot)
 
       if (cfg.onlyActiveUser) {
         let activeList: string[] = []
