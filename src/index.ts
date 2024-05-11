@@ -1,4 +1,4 @@
-import { Context, Schema, h, Universal, Time } from 'koishi'
+import { Context, Schema, h, Universal, Time, isNullable } from 'koishi'
 import { randomSelect, getMaxAge } from './utils'
 import { } from '@koishijs/cache'
 
@@ -45,12 +45,14 @@ export function apply(ctx: Context, cfg: Config) {
   // sid: platform:selfId
 
   ctx.guild().on('message-created', async (session) => {
+    if (isNullable(session.userId)) return
     const member: Universal.GuildMember = session.event.member || { user: session.event.user }
     await ctx.cache.set(`waifu_members_${session.gid}`, session.userId, member, 2 * Time.day)
     await ctx.cache.set(`waifu_members_active_${session.gid}`, session.userId, '', cfg.activeDays * Time.day)
   })
 
   ctx.on('guild-member-removed', (session) => {
+    if (isNullable(session.userId)) return
     ctx.cache.delete(`waifu_members_${session.gid}`, session.userId)
     ctx.cache.delete(`waifu_members_active_${session.gid}`, session.userId)
   })
