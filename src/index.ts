@@ -1,5 +1,5 @@
-import { Context, Schema, h, Universal, Time, isNullable } from 'koishi'
-import { randomSelect, getMaxAge } from './utils'
+import { Context, Schema, h, Universal, Time, isNullable, Random, Session } from 'koishi'
+import { getMaxAge, getMemberInfo } from './utils'
 import { } from '@koishijs/cache'
 
 export const name = 'waifu'
@@ -57,6 +57,24 @@ export function apply(ctx: Context, cfg: Config) {
     ctx.cache.delete(`waifu_members_active_${session.gid}`, session.userId)
   })
 
+  async function getMemberList(session: Session, gid: string) {
+    let result: Universal.GuildMember[]
+    try {
+      const { data, next } = await session.bot.getGuildMemberList(session.guildId)
+      result = data
+      if (next) {
+        const { data } = await session.bot.getGuildMemberList(session.guildId, next)
+        result.push(...data)
+      }
+    } catch { }
+    if (!result?.length) {
+      for await (const value of ctx.cache.values(`waifu_members_${gid}`)) {
+        result.push(value)
+      }
+    }
+    return result
+  }
+
   ctx.command('waifu')
     .alias('marry', '娶群友', '今日老婆')
     .action(async ({ session }) => {
@@ -77,8 +95,7 @@ export function apply(ctx: Context, cfg: Config) {
         try {
           selected ??= { user: await session.bot.getUser(target) }
         } catch { }
-        const name = selected?.nick || selected?.user?.nick || selected?.user?.name || target
-        const avatar = selected?.avatar || selected?.user?.avatar
+        const [name, avatar] = getMemberInfo(selected, target)
         return session.text('.marriages', {
           quote: h.quote(session.messageId),
           name,
@@ -86,24 +103,10 @@ export function apply(ctx: Context, cfg: Config) {
         })
       }
 
-      let memberList: Universal.GuildMember[]
-      try {
-        const { data, next } = await session.bot.getGuildMemberList(session.guildId)
-        memberList = data
-        if (next) {
-          const { data } = await session.bot.getGuildMemberList(session.guildId, next)
-          memberList.push(...data)
-        }
-      } catch { }
-      if (!memberList?.length) {
-        for await (const value of ctx.cache.values(`waifu_members_${gid}`)) {
-          memberList.push(value)
-        }
-      }
-
       const excludes = cfg.excludeUsers.map(({ uid }) => uid)
       excludes.push(session.uid, session.sid)
 
+      const memberList = await getMemberList(session, gid)
       let list = memberList.filter(v => {
         return v.user && !excludes.includes(`${session.platform}:${v.user.id}`) && !v.user.isBot
       })
@@ -116,11 +119,11 @@ export function apply(ctx: Context, cfg: Config) {
       }
       if (list.length === 0) return session.text('.members-too-few')
 
-      let selected = randomSelect(list)
+      let selected = Random.pick(list)
       let selectedId = selected.user.id
       const selectedTarget = await ctx.cache.get(`waifu_marriages_${gid}`, selectedId)
       if (selectedTarget) {
-        selected = randomSelect(list)
+        selected = Random.pick(list)
         selectedId = selected.user.id
       }
       if (cfg.avoidNtr) {
@@ -128,7 +131,7 @@ export function apply(ctx: Context, cfg: Config) {
         while (true) {
           const selectedTarget = await ctx.cache.get(`waifu_marriages_${gid}`, selectedId)
           if (selectedTarget) {
-            selected = randomSelect(list)
+            selected = Random.pick(list)
             selectedId = selected.user.id
           } else {
             break
@@ -141,8 +144,7 @@ export function apply(ctx: Context, cfg: Config) {
       await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge)
       await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
 
-      const name = selected?.nick || selected?.user?.nick || selected?.user?.name || selectedId
-      const avatar = selected?.avatar || selected?.user?.avatar
+      const [name, avatar] = getMemberInfo(selected, selectedId)
       return session.text('.marriages', {
         quote: h.quote(session.messageId),
         name,
@@ -174,22 +176,8 @@ export function apply(ctx: Context, cfg: Config) {
           })
         }
 
-        let memberList: Universal.GuildMember[]
-        try {
-          const { data, next } = await session.bot.getGuildMemberList(session.guildId)
-          memberList = data
-          if (next) {
-            const { data } = await session.bot.getGuildMemberList(session.guildId, next)
-            memberList.push(...data)
-          }
-        } catch { }
-        if (!memberList?.length) {
-          for await (const value of ctx.cache.values(`waifu_members_${gid}`)) {
-            memberList.push(value)
-          }
-        }
-
-        let selected = memberList.find(u => u.user.id == targetId)
+        const memberList = await getMemberList(session, gid)
+        const selected = memberList.find(u => u.user.id == targetId)
         if (!selected) return session.text('.members-too-few')
 
         const selectedId = selected.user.id
@@ -197,8 +185,7 @@ export function apply(ctx: Context, cfg: Config) {
         await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge)
         await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
 
-        const name = selected?.nick || selected?.user?.nick || selected?.user?.name || selectedId
-        const avatar = selected?.avatar || selected?.user?.avatar
+        const [name, avatar] = getMemberInfo(selected, selectedId)
         return session.text('.force-marry', {
           quote: h.quote(session.messageId),
           name,
