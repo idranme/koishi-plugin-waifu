@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-waifu",
   "description": "Marry with your groupmate",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -22,7 +22,7 @@
     "url": "https://github.com/idranme/koishi-plugin-waifu.git"
   },
   "peerDependencies": {
-    "koishi": "^4.16.0"
+    "koishi": "^4.17.7"
   },
   "devDependencies": {
     "@koishijs/cache": "^2.1.0"

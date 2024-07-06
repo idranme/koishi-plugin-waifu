@@ -58,7 +58,7 @@ export function apply(ctx: Context, cfg: Config) {
   })
 
   async function getMemberList(session: Session, gid: string) {
-    let result: Universal.GuildMember[]
+    let result: Universal.GuildMember[] = []
     try {
       const { data, next } = await session.bot.getGuildMemberList(session.guildId)
       result = data
@@ -67,7 +67,7 @@ export function apply(ctx: Context, cfg: Config) {
         result.push(...data)
       }
     } catch { }
-    if (!result?.length) {
+    if (!result.length) {
       for await (const value of ctx.cache.values(`waifu_members_${gid}`)) {
         result.push(value)
       }
