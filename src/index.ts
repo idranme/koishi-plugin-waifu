@@ -237,7 +237,7 @@ export function apply(ctx: Context, cfg: Config) {
           name: session.username,
           agree: '我愿意',
           reject: '我拒绝',
-          time: '90秒'
+          time: '90'
         }))
 
         const targetSession = session.bot.session({

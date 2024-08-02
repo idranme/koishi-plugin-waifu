@@ -30,4 +30,4 @@ commands:
         already-marriage: '{quote}你已经有对象了，今天别再求婚啦！'
         members-too-few: 能求婚的群友没有这位，或许可以先把对方骗出来聊天？！
         target-self: '{quote}向自己求婚干嘛！'
-        request: '{targetAt} {targetAvatar}<br/>群友「{name}」向你求婚，那么...你愿意嫁给ta吗？在{time}内发送【{agree}】或者【{reject}】，回应对方哦！'
+        request: '{targetAt} {targetAvatar}<br/>群友「{name}」向你求婚，那么...你愿意嫁给ta吗？在{time}秒内发送【{agree}】或者【{reject}】，回应对方哦！'
