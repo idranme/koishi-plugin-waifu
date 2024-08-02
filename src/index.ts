@@ -18,24 +18,30 @@ export interface Config {
   onlyActiveUser: boolean
   activeDays: number
   forceMarry: boolean
+  propose: boolean
   excludeUsers: {
     uid: string
     note?: string
   }[]
 }
 
-export const Config: Schema<Config> = Schema.object({
-  avoidNtr: Schema.boolean().default(false),
-  onlyActiveUser: Schema.boolean().default(false),
-  activeDays: Schema.natural().default(7),
-  forceMarry: Schema.boolean().default(false),
-  excludeUsers: Schema.array(Schema.object({
-    uid: Schema.string().required(),
-    note: Schema.string()
-  })).role('table').default([{ uid: 'red:2854196310', note: 'Q群管家' }])
-}).i18n({
-  'zh-CN': require('./locales/zh-CN'),
-})
+export const Config: Schema<Config> = Schema.intersect([
+  Schema.object({
+    avoidNtr: Schema.boolean().default(false),
+    onlyActiveUser: Schema.boolean().default(false),
+    activeDays: Schema.natural().default(7),
+    excludeUsers: Schema.array(Schema.object({
+      uid: Schema.string().required(),
+      note: Schema.string()
+    })).role('table').default([{ uid: 'red:2854196310', note: 'Q群管家' }])
+  }).i18n({
+    'zh-CN': require('./locales/zh-CN'),
+  }),
+  Schema.object({
+    forceMarry: Schema.boolean().description('是否启用强娶指令').default(false),
+    propose: Schema.boolean().description('是否启用求婚指令').experimental().default(false),
+  }).description('附加指令')
+])
 
 export function apply(ctx: Context, cfg: Config) {
   ctx.i18n.define('zh-CN', require('./locales/zh-CN'))
@@ -165,7 +171,7 @@ export function apply(ctx: Context, cfg: Config) {
           })
         }
 
-        const targetId = target.replace(session.platform + ':', '')
+        const targetId = target.slice(session.platform.length + 1)
         if (targetId === session.userId) return session.text('.target-self')
         const { gid } = session
 
@@ -191,6 +197,71 @@ export function apply(ctx: Context, cfg: Config) {
           name,
           avatar: avatar && h.image(avatar)
         })
+      })
+  }
+
+  if (cfg.propose) {
+    ctx.command('propose <target:user>')
+      .alias('求婚')
+      .action(async ({ session }, target) => {
+        if (!session.guildId) {
+          return session.text('.members-too-few')
+        }
+        if (!target) {
+          return session.text('.no-target', {
+            quote: h.quote(session.messageId)
+          })
+        }
+
+        const targetId = target.slice(session.platform.length + 1)
+        if (targetId === session.userId) return session.text('.target-self')
+        const { gid } = session
+
+        const marriage = await ctx.cache.get(`waifu_marriages_${gid}`, session.userId)
+        if (marriage) {
+          return session.text('.already-marriage', {
+            quote: h.quote(session.messageId)
+          })
+        }
+
+        const memberList = await getMemberList(session, gid)
+        const selected = memberList.find(u => u.user.id == targetId)
+        if (!selected) return session.text('.members-too-few')
+
+        const selectedId = selected.user.id
+        const [name, avatar] = getMemberInfo(selected, selectedId)
+
+        await session.send(session.text('.request', {
+          targetAt: h.at(selected.user.id),
+          targetAvatar: h.image(avatar),
+          name: session.username,
+          agree: '我愿意',
+          reject: '我拒绝',
+          time: '90秒'
+        }))
+
+        const targetSession = session.bot.session({
+          ...session.event,
+          member: selected,
+          user: selected.user
+        })
+        const reply = await targetSession.prompt(session => {
+          return h.select(session.elements, 'text').join('')
+        }, { timeout: 90 * Time.second })
+
+        if (reply === '我愿意') {
+          const maxAge = getMaxAge()
+          await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge)
+          await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
+          return session.text('.success', {
+            quote: h.quote(session.messageId),
+            name
+          })
+        } else if (reply === '我拒绝') {
+          return session.text('.failure', {
+            quote: h.quote(session.messageId)
+          })
+        }
       })
   }
 }
