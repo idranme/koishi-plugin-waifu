@@ -246,7 +246,7 @@ export function apply(ctx: Context, cfg: Config) {
           user: selected.user
         })
         const reply = await targetSession.prompt(session => {
-          return h.select(session.elements, 'text').join('')
+          return h.select(session.elements, 'text').join('').trim()
         }, { timeout: 90 * Time.second })
 
         if (reply === '我愿意') {
