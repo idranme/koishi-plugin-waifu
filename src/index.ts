@@ -51,14 +51,14 @@ export function apply(ctx: Context, cfg: Config) {
   // sid: platform:selfId
 
   ctx.guild().on('message-created', async (session) => {
-    if (isNullable(session.userId)) return
-    const member: Universal.GuildMember = session.event.member || { user: session.event.user }
-    await ctx.cache.set(`waifu_members_${session.gid}`, session.userId, member, 2 * Time.day)
+    if (isNullable(session.userId) || session.userId == "0") return
+    const member: Universal.GuildMember = { user: session.event.user,nick: session.event.member.nick }
+    await ctx.cache.set(`waifu_members_${session.gid}`, session.userId, member, 4 * Time.day)
     await ctx.cache.set(`waifu_members_active_${session.gid}`, session.userId, '', cfg.activeDays * Time.day)
   })
 
   ctx.on('guild-member-removed', (session) => {
-    if (isNullable(session.userId)) return
+    if (isNullable(session.userId) || session.userId == "0") return
     ctx.cache.delete(`waifu_members_${session.gid}`, session.userId)
     ctx.cache.delete(`waifu_members_active_${session.gid}`, session.userId)
   })
@@ -81,6 +81,26 @@ export function apply(ctx: Context, cfg: Config) {
     return result
   }
 
+  /*ctx.command('waifu_reset_marriages').action(async ({ session }) => {
+    if (!session.guildId) {
+      return session.text('.members-too-few')
+    }
+    const { gid } = session
+    ctx.cache.clear(`waifu_marriages_${gid}`)
+    return session.text('reset_marriages')
+  })
+
+  ctx.command('waifu_reset_all').action(async ({ session }) => {
+    if (!session.guildId) {
+      return session.text('.members-too-few')
+    }
+    const { gid } = session
+    ctx.cache.clear(`waifu_marriages_${gid}`)
+    ctx.cache.clear(`waifu_members_${gid}`)
+    ctx.cache.clear(`waifu_members_active_${gid}`)
+    return session.text('reset_all')
+  })*/
+
   ctx.command('waifu')
     .alias('marry', '娶群友', '今日老婆')
     .action(async ({ session }) => {
@@ -88,15 +108,14 @@ export function apply(ctx: Context, cfg: Config) {
         return session.text('.members-too-few')
       }
       const { gid } = session
-
       const target = await ctx.cache.get(`waifu_marriages_${gid}`, session.userId)
       if (target) {
         let selected: Universal.GuildMember
         try {
-          selected = await session.bot.getGuildMember(session.guildId, target)
+          selected = await ctx.cache.get(`waifu_members_${gid}`, target)
         } catch { }
         try {
-          selected ??= await ctx.cache.get(`waifu_members_${gid}`, target)
+          selected ??= await session.bot.getGuildMember(session.guildId, target)
         } catch { }
         try {
           selected ??= { user: await session.bot.getUser(target) }
