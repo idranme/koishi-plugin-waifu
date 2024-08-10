@@ -58,7 +58,7 @@ export function apply(ctx: Context, cfg: Config) {
   })
 
   ctx.on('guild-member-removed', (session) => {
-    if (isNullable(session.userId) || session.userId == "0") return
+    if (isNullable(session.userId) || session.userId == '0') return
     ctx.cache.delete(`waifu_members_${session.gid}`, session.userId)
     ctx.cache.delete(`waifu_members_active_${session.gid}`, session.userId)
   })
