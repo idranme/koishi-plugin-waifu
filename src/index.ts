@@ -52,7 +52,7 @@ export function apply(ctx: Context, cfg: Config) {
 
   ctx.guild().on('message-created', async (session) => {
     if (isNullable(session.userId) || session.userId == '0') return
-    const member: Universal.GuildMember = { user: session.event.user,nick: session.event.member.nick }
+    const member: Universal.GuildMember = { user: session.event.user, ...session.event.member }
     await ctx.cache.set(`waifu_members_${session.gid}`, session.userId, member, 4 * Time.day)
     await ctx.cache.set(`waifu_members_active_${session.gid}`, session.userId, '', cfg.activeDays * Time.day)
   })
