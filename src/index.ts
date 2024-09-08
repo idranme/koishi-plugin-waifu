@@ -283,13 +283,11 @@ export function apply(ctx: Context, cfg: Config) {
         const marriage = await ctx.cache.get(`waifu_marriages_${gid}`, session.userId)
         if (!marriage) {
           return session.text('.not-married', {
-            name: session.username,
             quote: h.quote(session.messageId)
           })
         } else {
           ctx.cache.delete(`waifu_marriages_${gid}`, session.userId)
           return session.text('.divorcement', {
-            name: session.username,
             quote: h.quote(session.messageId)
           })
         }
