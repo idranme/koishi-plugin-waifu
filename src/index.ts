@@ -239,37 +239,52 @@ export function apply(ctx: Context, cfg: Config) {
         const selectedId = selected.user.id
         const [name, avatar] = getMemberInfo(selected, selectedId)
 
-        await session.send(session.text('.request', {
-          targetAt: h.at(selected.user.id),
-          targetAvatar: h.image(avatar),
-          name: session.username,
-          agree: '我愿意',
-          reject: '我拒绝',
-          time: '90'
-        }))
-
-        const targetSession = session.bot.session({
-          ...session.event,
-          member: selected,
-          user: selected.user
-        })
-        const reply = await targetSession.prompt(session => {
-          return h.select(session.elements, 'text').join('').trim()
-        }, { timeout: 90 * Time.second })
-
-        if (reply === '我愿意') {
-          const maxAge = getMaxAge()
-          await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge)
-          await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
-          return session.text('.success', {
-            quote: h.quote(session.messageId),
-            name
+        await session.send(
+          session.text('.request', {
+            targetAt: h.at(selected.user.id),
+            targetAvatar: h.image(avatar),
+            name: session.username,
+            agree: '我愿意',
+            reject: '我拒绝',
+            time: '90'
           })
-        } else if (reply === '我拒绝') {
-          return session.text('.failure', {
-            quote: h.quote(session.messageId)
+        )
+
+        let timeoutId: NodeJS.Timeout
+        const sourceMessageId = session.messageId
+        const sourceUserId = session.userId
+
+        const dispose = ctx.platform(session.platform)
+          .user(selected.user.id)
+          .guild(session.guildId)
+          .on('message-created', async ({ elements, text, send }) => {
+            const reply = h.select(elements, 'text').join('').trim()
+            if (reply === '我愿意') {
+              dispose()
+              clearTimeout(timeoutId)
+              const maxAge = getMaxAge()
+              await ctx.cache.set(`waifu_marriages_${gid}`, sourceUserId, selectedId, maxAge)
+              await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, sourceUserId, maxAge)
+              await send(
+                text('commands.propose.messages.success', {
+                  quote: h.quote(sourceMessageId),
+                  name
+                })
+              )
+            } else if (reply === '我拒绝') {
+              dispose()
+              clearTimeout(timeoutId)
+              await send(
+                text('commands.propose.messages.failure', {
+                  quote: h.quote(sourceMessageId)
+                })
+              )
+            }
           })
-        }
+
+        timeoutId = setTimeout(() => {
+          dispose()
+        }, 90 * Time.second)
       })
   }
 
