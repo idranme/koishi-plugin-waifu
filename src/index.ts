@@ -19,6 +19,7 @@ export interface Config {
   activeDays: number
   forceMarry: boolean
   propose: boolean
+  divorce: boolean
   excludeUsers: {
     uid: string
     note?: string
@@ -40,6 +41,7 @@ export const Config: Schema<Config> = Schema.intersect([
   Schema.object({
     forceMarry: Schema.boolean().description('是否启用强娶指令').default(false),
     propose: Schema.boolean().description('是否启用求婚指令').experimental().default(false),
+    divorce: Schema.boolean().description('是否启用离婚指令').experimental().default(false),
   }).description('附加指令')
 ])
 
@@ -265,6 +267,27 @@ export function apply(ctx: Context, cfg: Config) {
           })
         } else if (reply === '我拒绝') {
           return session.text('.failure', {
+            quote: h.quote(session.messageId)
+          })
+        }
+      })
+  }
+
+
+  if (cfg.divorce) {
+    ctx.command('divorce')
+      .alias('离婚')
+      .action(async ({ session }) => {
+        const { gid } = session
+
+        const marriage = await ctx.cache.get(`waifu_marriages_${gid}`, session.userId)
+        if (!marriage) {
+          return session.text('.not-married', {
+            quote: h.quote(session.messageId)
+          })
+        } else {
+          ctx.cache.delete(`waifu_marriages_${gid}`, session.userId)
+          return session.text('.divorcement', {
             quote: h.quote(session.messageId)
           })
         }

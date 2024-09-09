@@ -31,3 +31,8 @@ commands:
         members-too-few: 能求婚的群友没有这位，或许可以先把对方骗出来聊天？！
         target-self: '{quote}向自己求婚干嘛！'
         request: '{targetAt} {targetAvatar}<br/>群友「{name}」向你求婚，那么...你愿意嫁给ta吗？在{time}秒内发送【{agree}】或者【{reject}】，回应对方哦！'
+  divorce:
+    description: 和群友离婚
+    messages:
+        not-married: '{quote}你还是只单身狗，不能离婚！'
+        divorcement: '{quote}你已经离婚, 江湖有缘再相见~'
