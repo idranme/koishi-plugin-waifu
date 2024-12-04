@@ -258,6 +258,7 @@ export function apply(ctx: Context, cfg: Config) {
         const selectedId = selected.user.id
         const [name, avatar] = getMemberInfo(selected, selectedId)
 
+
         await session.send(
           session.text('.request', {
             targetAt: h.at(selected.user.id),
@@ -281,6 +282,15 @@ export function apply(ctx: Context, cfg: Config) {
             if (reply === '我愿意') {
               dispose()
               clearTimeout(timeoutId)
+              const isMarriaged = await ctx.cache.get(`waifu_marriages_${gid}`, selectedId);
+              if (isMarriaged) {
+                await send(
+                  text('commands.propose.messages.already-marriage2', {
+                    quote: h.at(selectedId)
+                  })
+                )
+                return
+              }
               const maxAge = getMaxAge()
               await ctx.cache.set(`waifu_marriages_${gid}`, sourceUserId, selectedId, maxAge)
               await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, sourceUserId, maxAge)
