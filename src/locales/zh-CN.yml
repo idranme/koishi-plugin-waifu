@@ -1,6 +1,8 @@
 avoidNtr: 是否避免用户抽中他人的老婆
 onlyActiveUser: 是否只让用户抽中活跃的群友
 activeDays: 活跃天数最小值 (onlyActiveUser 判断活跃的标准)
+allowChange: 是否允许用户使用换老婆指令
+maxTimes: 每日换老婆次数上限 (0 为不限制)
 excludeUsers:
   $description: 排除的用户
   $value:
@@ -36,3 +38,11 @@ commands:
     messages:
         not-married: '{quote}你还是只单身狗，不能离婚！'
         divorcement: '{quote}你已经离婚，江湖有缘再相见~'
+  changewaifu:
+    description: "换老婆"
+    messages:
+      not-married: '{quote}你没有老婆，不能换！'
+      change-success: '{quote}换好了！你今日的老婆是：{name}{avatar}'
+      last-times: '{quote}再换你就没老婆了！你今日的老婆是：{name}{avatar}'
+      times-too-many: '{quote}渣男，你今天没老婆了！'
+      members-too-few: 能换的群友没有了！
