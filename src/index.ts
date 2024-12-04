@@ -26,6 +26,7 @@ export interface Config {
   divorce: boolean
   allowChange: boolean
   maxTimes: number
+  isBinding: boolean
   excludeUsers: {
     uid: string
     note?: string
@@ -49,7 +50,8 @@ export const Config: Schema<Config> = Schema.intersect([
     propose: Schema.boolean().description('是否启用求婚指令').experimental().default(false),
     divorce: Schema.boolean().description('是否启用离婚指令').experimental().default(false),
     allowChange: Schema.boolean().description('是否启用换老婆指令').experimental().default(false),
-    maxTimes: Schema.natural().description('每日换老婆次数上限 (0 为不限制)').experimental().default(2)
+    maxTimes: Schema.natural().description('每日换老婆次数上限 (0 为不限制)').experimental().default(2),
+    isBinding: Schema.boolean().description('是否启用绑定(今日老婆/强娶/换老婆 会改变双方的状态)\n(注意：开启avoidNtr才有效，且求婚和离婚固定开启绑定)').experimental().default(true)
   }).description('附加指令')
 ])
 
@@ -168,7 +170,8 @@ export function apply(ctx: Context, cfg: Config) {
       }
       const maxAge = getMaxAge()
       await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge)
-      await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
+      if (cfg.isBinding && cfg.avoidNtr)
+        await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
 
       //记录已经结婚，设置times为1，确保用户下次调用换老婆时能够获得正确的次数
       await ctx.cache.set(`waifu_times_${gid}`, session.userId, 1, maxAge);
@@ -212,7 +215,8 @@ export function apply(ctx: Context, cfg: Config) {
         const selectedId = selected.user.id
         const maxAge = getMaxAge()
         await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge)
-        await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
+        if (cfg.isBinding && cfg.avoidNtr)
+          await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
 
         const [name, avatar] = getMemberInfo(selected, selectedId)
         return session.text('.force-marry', {
@@ -338,7 +342,8 @@ export function apply(ctx: Context, cfg: Config) {
         const times = await ctx.cache.get(`waifu_times_${gid}`, session.userId);
         if (times > cfg.maxTimes && cfg.maxTimes != 0) {
           if (marriage) {
-            ctx.cache.delete(`waifu_marriages_${gid}`, marriage);
+            if (cfg.isBinding && cfg.avoidNtr)
+              ctx.cache.delete(`waifu_marriages_${gid}`, marriage);
             ctx.cache.delete(`waifu_marriages_${gid}`, session.userId);
           }
           return session.text(".times-too-many", {
@@ -398,15 +403,17 @@ export function apply(ctx: Context, cfg: Config) {
 
         //如果程序运行到这里，那么说明已经获取了一个新的人，那么就继续
 
-        //解绑当前关系(双向解绑)
-        ctx.cache.delete(`waifu_marriages_${gid}`, marriage);
+        //解绑当前关系
+        if (cfg.isBinding && cfg.avoidNtr)
+          ctx.cache.delete(`waifu_marriages_${gid}`, marriage);
         ctx.cache.delete(`waifu_marriages_${gid}`, session.userId);
 
         //绑定新的关系
         const maxAge = getMaxAge();
 
         await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge);
-        await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge);
+        if (cfg.isBinding && cfg.avoidNtr)
+          await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge);
 
 
 
