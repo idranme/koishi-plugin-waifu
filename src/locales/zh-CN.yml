@@ -1,9 +1,8 @@
 avoidNtr: 是否避免用户抽中他人的老婆
 onlyActiveUser: 是否只让用户抽中活跃的群友
 activeDays: 活跃天数最小值 (onlyActiveUser 判断活跃的标准)
-allowChange: 是否允许用户使用换老婆指令
-maxTimes: 每日换老婆次数上限 (0 为不限制)
-isBinding: 是否启用绑定(今日老婆/强娶/换老婆 会改变双方的状态) (注意：开启avoidNtr才有效，且求婚和离婚固定开启)
+maxTimes: 每日换老婆次数上限 (对换老婆指令生效，0 为不限制)
+isBinding: "是否在用户使用娶群友、强娶、换老婆指令时改变双方状态\n(开启 avoidNtr 时才有效，且求婚和离婚指令固定生效)"
 excludeUsers:
   $description: 排除的用户
   $value:

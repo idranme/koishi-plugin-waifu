@@ -21,16 +21,16 @@ export interface Config {
   avoidNtr: boolean
   onlyActiveUser: boolean
   activeDays: number
-  forceMarry: boolean
-  propose: boolean
-  divorce: boolean
-  allowChange: boolean
-  maxTimes: number
-  isBinding: boolean
   excludeUsers: {
     uid: string
     note?: string
   }[]
+  maxTimes: number
+  isBinding: boolean
+  forceMarry: boolean
+  propose: boolean
+  divorce: boolean
+  changeWaifu: boolean
 }
 
 export const Config: Schema<Config> = Schema.intersect([
@@ -41,7 +41,9 @@ export const Config: Schema<Config> = Schema.intersect([
     excludeUsers: Schema.array(Schema.object({
       uid: Schema.string().required(),
       note: Schema.string()
-    })).role('table').default([{ uid: 'red:2854196310', note: 'Q群管家' }])
+    })).role('table').default([{ uid: 'red:2854196310', note: 'Q群管家' }]),
+    maxTimes: Schema.natural().default(2),
+    isBinding: Schema.boolean().default(true)
   }).i18n({
     'zh-CN': require('./locales/zh-CN'),
   }),
@@ -49,9 +51,7 @@ export const Config: Schema<Config> = Schema.intersect([
     forceMarry: Schema.boolean().description('是否启用强娶指令').default(false),
     propose: Schema.boolean().description('是否启用求婚指令').experimental().default(false),
     divorce: Schema.boolean().description('是否启用离婚指令').experimental().default(false),
-    allowChange: Schema.boolean().description('是否启用换老婆指令').experimental().default(false),
-    maxTimes: Schema.natural().description('每日换老婆次数上限 (0 为不限制)').experimental().default(2),
-    isBinding: Schema.boolean().description('是否启用绑定(今日老婆/强娶/换老婆 会改变双方的状态)\n(注意：开启avoidNtr才有效，且求婚和离婚固定开启绑定)').experimental().default(true)
+    changeWaifu: Schema.boolean().description('是否启用换老婆指令').experimental().default(false)
   }).description('附加指令')
 ])
 
@@ -339,8 +339,8 @@ export function apply(ctx: Context, cfg: Config) {
       })
   }
 
-  if (cfg.allowChange) {
-    ctx.command('changewaifu')
+  if (cfg.changeWaifu) {
+    ctx.command('change-waifu')
       .alias('换老婆')
       .action(async ({ session }) => {
         if (!session.guildId) {
