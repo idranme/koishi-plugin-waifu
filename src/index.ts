@@ -30,6 +30,7 @@ export interface Config {
   propose: boolean
   divorce: boolean
   changeWaifu: boolean
+  waifuQuery: boolean
 }
 
 export const Config: Schema<Config> = Schema.intersect([
@@ -47,9 +48,10 @@ export const Config: Schema<Config> = Schema.intersect([
   }),
   Schema.object({
     forceMarry: Schema.boolean().description('是否启用强娶指令').default(false),
-    propose: Schema.boolean().description('是否启用求婚指令').experimental().default(false),
-    divorce: Schema.boolean().description('是否启用离婚指令').experimental().default(false),
-    changeWaifu: Schema.boolean().description('是否启用换老婆指令').experimental().default(false)
+    propose: Schema.boolean().description('是否启用求婚指令').default(false),
+    divorce: Schema.boolean().description('是否启用离婚指令').default(false),
+    changeWaifu: Schema.boolean().description('是否启用换老婆指令').experimental().default(false),
+    waifuQuery: Schema.boolean().description('是否启用查老婆指令').experimental().default(false)
   }).description('附加指令')
 ])
 
@@ -442,6 +444,48 @@ export function apply(ctx: Context, cfg: Config) {
         }
 
 
+      })
+  }
+
+  if (cfg.waifuQuery) {
+    ctx.command('waifu-query')
+      .alias('查老婆')
+      .action(async ({ session }) => {
+        if (!session.guildId) {
+          return session.text('.not-married')
+        }
+        const { gid } = session
+        const target = await ctx.cache.get(`waifu_marriages_${gid}`, session.userId)
+        if (target) {
+          let selected: Universal.GuildMember
+          try {
+            selected = await session.bot.getGuildMember(session.guildId, target)
+          } catch {
+          }
+          try {
+            const member = await ctx.cache.get(`waifu_members_${gid}`, target)
+            if (!selected) {
+              selected = member
+            } else {
+              selected.nick ??= member.nick
+              selected.user ??= member.user
+              selected.user.name ??= member.user.name
+            }
+          } catch {
+          }
+          try {
+            selected ??= { user: await session.bot.getUser(target) }
+          } catch {
+          }
+          const [name, avatar] = getMemberInfo(selected, target)
+          return session.text('.marriages', {
+            quote: h.quote(session.messageId),
+            name,
+            avatar: avatar && h.image(avatar)
+          })
+        } else {
+          return session.text('.not-married')
+        }
       })
   }
 }

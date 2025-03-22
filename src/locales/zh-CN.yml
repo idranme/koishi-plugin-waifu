@@ -46,3 +46,8 @@ commands:
       last-times: '{quote}再换你就没老婆了！你今日的老婆是：{name}{avatar}'
       times-too-many: '{quote}渣男，你今天没老婆了！'
       members-too-few: 能换的群友没有了！
+  waifu-query:
+    description: 查询老婆
+    messages:
+      not-married: '{quote}你没有老婆'
+      marriages: '{quote}你今日的群友老婆是：{name} {avatar}'
