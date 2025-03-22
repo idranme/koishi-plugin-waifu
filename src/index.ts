@@ -26,7 +26,6 @@ export interface Config {
     note?: string
   }[]
   maxTimes: number
-  isBinding: boolean
   forceMarry: boolean
   propose: boolean
   divorce: boolean
@@ -42,8 +41,7 @@ export const Config: Schema<Config> = Schema.intersect([
       uid: Schema.string().required(),
       note: Schema.string()
     })).role('table').default([{ uid: 'red:2854196310', note: 'Q群管家' }]),
-    maxTimes: Schema.natural().default(2),
-    isBinding: Schema.boolean().default(true)
+    maxTimes: Schema.natural().default(2)
   }).i18n({
     'zh-CN': require('./locales/zh-CN'),
   }),
@@ -170,11 +168,10 @@ export function apply(ctx: Context, cfg: Config) {
       }
       const maxAge = getMaxAge()
       await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge)
-      if (cfg.isBinding && cfg.avoidNtr)
-        await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
+      await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
 
       //记录已经结婚，设置times为1，确保用户下次调用换老婆时能够获得正确的次数
-      await ctx.cache.set(`waifu_times_${gid}`, session.userId, 1, maxAge);
+      await ctx.cache.set(`waifu_times_${gid}`, session.userId, 1, maxAge)
 
       const [name, avatar] = getMemberInfo(selected, selectedId)
       return session.text('.marriages', {
@@ -215,8 +212,7 @@ export function apply(ctx: Context, cfg: Config) {
         const selectedId = selected.user.id
         const maxAge = getMaxAge()
         await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge)
-        if (cfg.isBinding && cfg.avoidNtr)
-          await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
+        await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
 
         const [name, avatar] = getMemberInfo(selected, selectedId)
         return session.text('.force-marry', {
@@ -282,7 +278,7 @@ export function apply(ctx: Context, cfg: Config) {
             if (reply === '我愿意') {
               dispose()
               clearTimeout(timeoutId)
-              const isMarriaged = await ctx.cache.get(`waifu_marriages_${gid}`, selectedId);
+              const isMarriaged = await ctx.cache.get(`waifu_marriages_${gid}`, selectedId)
               if (isMarriaged) {
                 await send(
                   text('commands.propose.messages.already-marriage2', {
@@ -344,111 +340,108 @@ export function apply(ctx: Context, cfg: Config) {
       .alias('换老婆')
       .action(async ({ session }) => {
         if (!session.guildId) {
-          return session.text('.members-too-few');
+          return session.text('.members-too-few')
         }
         const { gid } = session
-        const marriage = await ctx.cache.get(`waifu_marriages_${gid}`, session.userId);
+        const marriage = await ctx.cache.get(`waifu_marriages_${gid}`, session.userId)
 
-        const times = await ctx.cache.get(`waifu_times_${gid}`, session.userId);
+        const times = await ctx.cache.get(`waifu_times_${gid}`, session.userId)
         if (times > cfg.maxTimes && cfg.maxTimes != 0) {
           if (marriage) {
-            if (cfg.isBinding && cfg.avoidNtr)
-              ctx.cache.delete(`waifu_marriages_${gid}`, marriage);
-            ctx.cache.delete(`waifu_marriages_${gid}`, session.userId);
+            ctx.cache.delete(`waifu_marriages_${gid}`, marriage)
+            ctx.cache.delete(`waifu_marriages_${gid}`, session.userId)
           }
-          return session.text(".times-too-many", {
+          return session.text('.times-too-many', {
             quote: h.quote(session.messageId)
-          });
+          })
         } else if (!marriage || times == 0 || typeof times == 'undefined') {
-          return session.text(".not-married", {
+          return session.text('.not-married', {
             quote: h.quote(session.messageId)
-          });
+          })
         }
-        const excludes = cfg.excludeUsers.map(({ uid }) => uid);
-        excludes.push(session.uid, session.sid);
-        const memberList = await getMemberList(session, gid);
+        const excludes = cfg.excludeUsers.map(({ uid }) => uid)
+        excludes.push(session.uid, session.sid)
+        const memberList = await getMemberList(session, gid)
         let list = memberList.filter((v) => {
-          return v.user && !excludes.includes(`${session.platform}:${v.user.id}`) && !v.user.isBot;
-        });
+          return v.user && !excludes.includes(`${session.platform}:${v.user.id}`) && !v.user.isBot
+        })
         if (cfg.onlyActiveUser) {
-          let activeList = [];
+          let activeList = []
           for await (const value of ctx.cache.keys(`waifu_members_active_${gid}`)) {
-            activeList.push(value);
+            activeList.push(value)
           }
-          list = list.filter((v) => activeList.find((active) => active === v.user.id));
+          list = list.filter((v) => activeList.find((active) => active === v.user.id))
         }
 
         //如果没有人，就返回members-too-few
-        if (list.length === 0) return session.text(".members-too-few");
+        if (list.length === 0) return session.text('.members-too-few')
 
         //随机获取一个人，并且获取他的id和marriages信息
-        let selected = Random.pick(list);
-        let selectedId = selected.user.id;
-        const selectedTarget = await ctx.cache.get(`waifu_marriages_${gid}`, selectedId);
+        let selected = Random.pick(list)
+        let selectedId = selected.user.id
+        const selectedTarget = await ctx.cache.get(`waifu_marriages_${gid}`, selectedId)
 
         //获取被选中的人的信息
         if (selectedTarget) {
-          selected = Random.pick(list);
-          selectedId = selected.user.id;
+          selected = Random.pick(list)
+          selectedId = selected.user.id
         }
 
         //避免 ntr
         if (cfg.avoidNtr) {
-          let i = 0;
+          let i = 0
           //循环判断，如果选中的人还是结婚，那么就重新获取一个
           while (true) {
-            const selectedTarget2 = await ctx.cache.get(`waifu_marriages_${gid}`, selectedId);
+            const selectedTarget2 = await ctx.cache.get(`waifu_marriages_${gid}`, selectedId)
             if (selectedTarget2) {
-              selected = Random.pick(list);
-              selectedId = selected.user.id;
+              selected = Random.pick(list)
+              selectedId = selected.user.id
             } else {
               //跳出循环
-              break;
+              break
             }
             //循环次数如果超过，那么就返回人太少
-            i++;
-            if (i > list.length) return session.text(".members-too-few");
+            i++
+            if (i > list.length) return session.text('.members-too-few')
           }
         }
 
         //如果程序运行到这里，那么说明已经获取了一个新的人，那么就继续
 
         //解绑当前关系
-        if (cfg.isBinding && cfg.avoidNtr)
-          ctx.cache.delete(`waifu_marriages_${gid}`, marriage);
-        ctx.cache.delete(`waifu_marriages_${gid}`, session.userId);
+        ctx.cache.delete(`waifu_marriages_${gid}`, marriage)
+        ctx.cache.delete(`waifu_marriages_${gid}`, session.userId)
 
         //绑定新的关系
-        const maxAge = getMaxAge();
+        const maxAge = getMaxAge()
 
-        await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge);
-        if (cfg.isBinding && cfg.avoidNtr)
-          await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge);
+        await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge)
+        await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
 
 
 
         //请求次数+1
-        await ctx.cache.set(`waifu_times_${gid}`, session.userId, times + 1, maxAge);
+        await ctx.cache.set(`waifu_times_${gid}`, session.userId, times + 1, maxAge)
 
 
-        const [name2, avatar] = getMemberInfo(selected, selectedId);
+        const [name2, avatar] = getMemberInfo(selected, selectedId)
         if (times == cfg.maxTimes && cfg.maxTimes != 0) {
-          return session.text(".last-times", {
+          return session.text('.last-times', {
             quote: h.quote(session.messageId),
             name: name2,
             avatar: avatar && h.image(avatar)
-          });
+          })
         } else if (times < cfg.maxTimes || cfg.maxTimes == 0) {
-          return session.text(".change-success", {
+          return session.text('.change-success', {
             quote: h.quote(session.messageId),
             name: name2,
             avatar: avatar && h.image(avatar)
-          });
+          })
         } else {
-          return session.text("Error");
+          return session.text('Error')
         }
 
 
-      });
+      })
   }
 }
