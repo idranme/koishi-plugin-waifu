@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-waifu",
   "description": "Marry with your groupmate",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
