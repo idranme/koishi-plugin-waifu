@@ -1,6 +1,7 @@
 avoidNtr: 是否避免用户抽中他人的老婆
 onlyActiveUser: 是否只让用户抽中活跃的群友
 activeDays: 活跃天数最小值 (onlyActiveUser 判断活跃的标准)
+maxTimes: 每日换老婆次数上限 (对换老婆指令生效，0 为不限制)
 excludeUsers:
   $description: 排除的用户
   $value:
@@ -28,6 +29,7 @@ commands:
         failure: '{quote}对方拒绝了'
         no-target: '{quote}向谁求婚呀~'
         already-marriage: '{quote}你已经有对象了，今天别再求婚啦！'
+        already-marriage2: '{quote} 你已经有对象了，怎么能接受别人求婚呢！'
         members-too-few: 能求婚的群友没有这位，或许可以先把对方骗出来聊天？！
         target-self: '{quote}向自己求婚干嘛！'
         request: '{targetAt} {targetAvatar}<br/>群友「{name}」向你求婚，那么...你愿意嫁给ta吗？在{time}秒内发送【{agree}】或者【{reject}】，回应对方哦！'
@@ -36,3 +38,11 @@ commands:
     messages:
         not-married: '{quote}你还是只单身狗，不能离婚！'
         divorcement: '{quote}你已经离婚，江湖有缘再相见~'
+  change-waifu:
+    description: 换老婆
+    messages:
+      not-married: '{quote}你没有老婆，不能换！'
+      change-success: '{quote}换好了！你今日的老婆是：{name}{avatar}'
+      last-times: '{quote}再换你就没老婆了！你今日的老婆是：{name}{avatar}'
+      times-too-many: '{quote}渣男，你今天没老婆了！'
+      members-too-few: 能换的群友没有了！

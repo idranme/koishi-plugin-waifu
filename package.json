@@ -25,7 +25,8 @@
     "koishi": "^4.17.7"
   },
   "devDependencies": {
-    "@koishijs/cache": "^2.1.0"
+    "@koishijs/cache": "^2.1.0",
+    "koishi": "^4.17.7"
   },
   "koishi": {
     "description": {
@@ -33,5 +34,6 @@
       "zh": "娶群友！来寻找你今日的群友老婆吧！"
     },
     "browser": true
-  }
+  },
+  "packageManager": "yarn@4.5.3"
 }
