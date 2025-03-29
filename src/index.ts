@@ -1,9 +1,12 @@
 import { Context, Schema, h, Universal, Time, isNullable, Random, Session } from 'koishi'
-import { getMaxAge, getMemberInfo } from './utils'
+import { getMaxAge } from './utils'
 import { } from '@koishijs/cache'
 
 export const name = 'waifu'
-export const inject = ['cache']
+export const inject = {
+  required: ['cache'],
+  optional: ['database']
+}
 
 declare module '@koishijs/cache' {
   interface Tables {
@@ -94,6 +97,19 @@ export function apply(ctx: Context, cfg: Config) {
     return result
   }
 
+  async function getMemberInfo(member: Universal.GuildMember, id: string, platform: string) {
+    let name = member?.nick || member?.user?.nick || member?.user?.name
+    const avatar = member?.avatar || member?.user?.avatar
+    if (!name && ctx.database) {
+      const user = await ctx.database.getUser(platform, id)
+      if (user?.name) {
+        name = user.name
+      }
+    }
+    name ||= id
+    return [name, avatar]
+  }
+
   ctx.command('waifu')
     .alias('marry', '娶群友', '今日老婆')
     .action(async ({ session }) => {
@@ -123,7 +139,7 @@ export function apply(ctx: Context, cfg: Config) {
           selected ??= { user: await session.bot.getUser(target) }
         } catch {
         }
-        const [name, avatar] = getMemberInfo(selected, target)
+        const [name, avatar] = await getMemberInfo(selected, target, session.platform)
         return session.text('.marriages', {
           quote: h.quote(session.messageId),
           name,
@@ -175,7 +191,7 @@ export function apply(ctx: Context, cfg: Config) {
       //记录已经结婚，设置times为1，确保用户下次调用换老婆时能够获得正确的次数
       await ctx.cache.set(`waifu_times_${gid}`, session.userId, 1, maxAge)
 
-      const [name, avatar] = getMemberInfo(selected, selectedId)
+      const [name, avatar] = await getMemberInfo(selected, selectedId, session.platform)
       return session.text('.marriages', {
         quote: h.quote(session.messageId),
         name,
@@ -216,7 +232,7 @@ export function apply(ctx: Context, cfg: Config) {
         await ctx.cache.set(`waifu_marriages_${gid}`, session.userId, selectedId, maxAge)
         await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
 
-        const [name, avatar] = getMemberInfo(selected, selectedId)
+        const [name, avatar] = await getMemberInfo(selected, selectedId, session.platform)
         return session.text('.force-marry', {
           quote: h.quote(session.messageId),
           name,
@@ -254,7 +270,7 @@ export function apply(ctx: Context, cfg: Config) {
         if (!selected) return session.text('.members-too-few')
 
         const selectedId = selected.user.id
-        const [name, avatar] = getMemberInfo(selected, selectedId)
+        const [name, avatar] = await getMemberInfo(selected, selectedId, session.platform)
 
 
         await session.send(
@@ -426,7 +442,7 @@ export function apply(ctx: Context, cfg: Config) {
         await ctx.cache.set(`waifu_times_${gid}`, session.userId, times + 1, maxAge)
 
 
-        const [name2, avatar] = getMemberInfo(selected, selectedId)
+        const [name2, avatar] = await getMemberInfo(selected, selectedId, session.platform)
         if (times == cfg.maxTimes && cfg.maxTimes != 0) {
           return session.text('.last-times', {
             quote: h.quote(session.messageId),
@@ -477,7 +493,7 @@ export function apply(ctx: Context, cfg: Config) {
             selected ??= { user: await session.bot.getUser(target) }
           } catch {
           }
-          const [name, avatar] = getMemberInfo(selected, target)
+          const [name, avatar] = await getMemberInfo(selected, target, session.platform)
           return session.text('.marriages', {
             quote: h.quote(session.messageId),
             name,
