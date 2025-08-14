@@ -118,6 +118,14 @@ export function apply(ctx: Context, cfg: Config) {
       }
       const { gid } = session
       const target = await ctx.cache.get(`waifu_marriages_${gid}`, session.userId)
+      if (cfg.changeWaifu) {
+        const times = await ctx.cache.get(`waifu_times_${gid}`, session.userId)
+        if (times > cfg.maxTimes && cfg.maxTimes != 0 && target == undefined) {
+          return session.text('.times-too-many', {
+            quote: h.quote(session.messageId)
+          })
+        }
+      }
       if (target) {
         let selected: Universal.GuildMember
         try {
