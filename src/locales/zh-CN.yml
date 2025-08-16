@@ -13,6 +13,7 @@ commands:
     description: 娶群友
     messages:
         marriages: '{quote}你今日的群友老婆是：{name} {avatar}'
+        times-too-many: '{quote}渣男，你今天没老婆了！'
         members-too-few: 潜在的老婆太少啦，快去拐骗（？）点回来吧！或者骗出来聊天！
   force-marry:
     description: 强娶群友
