@@ -121,7 +121,7 @@ export function apply(ctx: Context, cfg: Config) {
       const target = await ctx.cache.get(`waifu_marriages_${gid}`, session.userId)
       let times = await ctx.cache.get(`waifu_times_${gid}`, session.userId)
       if (cfg.changeWaifu) {
-        if (times > cfg.maxTimes && cfg.maxTimes != 0 && target == undefined) {
+        if (times > cfg.maxTimes && cfg.maxTimes !== 0 && target === undefined) {
           return session.text('.times-too-many', {
             quote: h.quote(session.messageId)
           })
@@ -200,7 +200,7 @@ export function apply(ctx: Context, cfg: Config) {
       await ctx.cache.set(`waifu_marriages_${gid}`, selectedId, session.userId, maxAge)
 
       // 防止未定义
-      if (times == undefined) {
+      if (times === undefined) {
         times = 0
       }
       // 记录已经结婚，设置times+1，确保用户下次调用换老婆时能够获得正确的次数
@@ -239,7 +239,7 @@ export function apply(ctx: Context, cfg: Config) {
         }
 
         const memberList = await getMemberList(session, gid)
-        const selected = memberList.find(u => u.user.id == targetId)
+        const selected = memberList.find(u => u.user.id === targetId)
         if (!selected) return session.text('.members-too-few')
 
         const selectedId = selected.user.id
@@ -281,7 +281,7 @@ export function apply(ctx: Context, cfg: Config) {
         }
 
         const memberList = await getMemberList(session, gid)
-        const selected = memberList.find(u => u.user.id == targetId)
+        const selected = memberList.find(u => u.user.id === targetId)
         if (!selected) return session.text('.members-too-few')
 
         const selectedId = selected.user.id
@@ -379,7 +379,7 @@ export function apply(ctx: Context, cfg: Config) {
         const marriage = await ctx.cache.get(`waifu_marriages_${gid}`, session.userId)
         const maxAge = getMaxAge()
         let times = await ctx.cache.get(`waifu_times_${gid}`, session.userId)
-        if (times > cfg.maxTimes && cfg.maxTimes != 0) {
+        if (times > cfg.maxTimes && cfg.maxTimes !== 0) {
           if (marriage) {
             ctx.cache.delete(`waifu_marriages_${gid}`, marriage)
             ctx.cache.delete(`waifu_marriages_${gid}`, session.userId)
@@ -387,9 +387,9 @@ export function apply(ctx: Context, cfg: Config) {
           return session.text('.times-too-many', {
             quote: h.quote(session.messageId)
           })
-        } else if (!marriage || times == 0 || typeof times == 'undefined') {
+        } else if (!marriage || times === 0 || typeof times === 'undefined') {
           // 修复用户为其他人老婆时无法换老婆的问题
-          if(marriage != undefined){
+          if(marriage !== undefined){
             await ctx.cache.set(`waifu_times_${gid}`, session.userId, 1, maxAge)
             times = await ctx.cache.get(`waifu_times_${gid}`, session.userId)
           }
@@ -460,13 +460,13 @@ export function apply(ctx: Context, cfg: Config) {
         await ctx.cache.set(`waifu_times_${gid}`, session.userId, times + 1, maxAge)
 
         const [name2, avatar] = await getMemberInfo(selected, selectedId, session.platform)
-        if (times == cfg.maxTimes && cfg.maxTimes != 0) {
+        if (times === cfg.maxTimes && cfg.maxTimes !== 0) {
           return session.text('.last-times', {
             quote: h.quote(session.messageId),
             name: name2,
             avatar: avatar && h.image(avatar)
           })
-        } else if (times < cfg.maxTimes || cfg.maxTimes == 0) {
+        } else if (times < cfg.maxTimes || cfg.maxTimes === 0) {
           return session.text('.change-success', {
             quote: h.quote(session.messageId),
             name: name2,
